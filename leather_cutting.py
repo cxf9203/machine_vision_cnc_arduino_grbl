@@ -2,6 +2,11 @@ import cv2 as cv
 import numpy as np
 import math
 
+def cncdrawcircle(cccircle):
+    circle_x = cccircle[0]
+    circle_y = cccircle[1]
+    gcodecmd = "G01 "+"X"+str(circle_x) +" Y"+str(circle_y)
+    print("gcode cmd is :",gcodecmd)
 ###settings###
 leatherImage = "leather1.jpg"
 CircleRadius = 100 #try other number: 50 200 etc..
@@ -39,7 +44,7 @@ size = Ileather_gray.shape
 #print(size)
 m = size[0] #hight rows
 n = size[1] #width column
-print(size)
+#print(size)
 #print(m)
 #print(n)
 
@@ -110,7 +115,7 @@ Centre = CentreOdd + CentreEven  #get centre data
 img_black = np.zeros((m,n,3),np.uint8)
 
 size_img_black = img_black.shape
-print(size_img_black)
+#print(size_img_black)
 #cv.line(img_black,(0,0),(n,m),(255,0,0),5)
 
 for k in range(len(Centre)):
@@ -156,12 +161,13 @@ for i in range(1,forSteps,2*CircleRadius):
 
 
         ###Hough圆检测方法###
-        circles = cv.HoughCircles(multi_img_grayscale, cv.HOUGH_GRADIENT, 1, CircleRadius,
-                               param1=100, param2=30,
-                               minRadius=CircleRadius-radiusTolerance, maxRadius=CircleRadius+radiusTolerance)
-        #print(circles)
-        circles_count =circles.shape[1]
-        print(circles)
+circles = cv.HoughCircles(multi_img_grayscale, cv.HOUGH_GRADIENT, 1, CircleRadius,
+                       param1=100, param2=30,
+                       minRadius=CircleRadius-radiusTolerance, maxRadius=CircleRadius+radiusTolerance)
+#print(circles)
+circles_count =circles.shape[1]
+print("number of circles :",circles_count)
+print("there are: ",circles)
 
 
 
@@ -169,8 +175,8 @@ for i in range(1,forSteps,2*CircleRadius):
 
 
 #draw circle
-print("circle count",circles_count)
-if circles is not None:
+print("circle count :",circles_count)
+if circles_count > 0 :
     circles = np.uint16(np.around(circles))
     for i in circles[0, :]:
 
@@ -179,8 +185,13 @@ if circles is not None:
         cv.circle(Ileather, center, 1, (0, 100, 100), 3)
         # circle outline
         radius = i[2]
+        #todo:
+        # CNC controller and send gcode to arduino
+        cncdrawcircle(center)
         if radius > 99.5:
             cv.circle(Ileather, center, radius, (255, 0, 255), 3)
 cv.imshow("hough circle",Ileather)
 cv.waitKey(0)
 cv.destroyAllWindows()
+
+
