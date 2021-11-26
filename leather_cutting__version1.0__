@@ -2,8 +2,14 @@ import cv2 as cv
 import numpy as np
 import math
 
+def cncdrawcircle(cccircle):
+    circle_x = cccircle[0]
+    circle_y = cccircle[1]
+    gcodecmd = "G01 "+"X"+str(circle_x) +" Y"+str(circle_y)
+    print("gcode cmd is :",gcodecmd)
+
 ###settings###
-leatherImage = "poly1.jpg"
+leatherImage = "leather1.jpg"
 CircleRadius = 100 #try other number: 50 200 etc..
 forSteps = 20
 areaTolerance = 5
@@ -151,24 +157,31 @@ cv.imshow("LeatherMultiplyCircles2",LeatherMultiplyCircles)
 contours,hierarchy = cv.findContours(LeatherMultiplyCircles,cv.RETR_EXTERNAL,cv.CHAIN_APPROX_NONE) #找到该对象外部轮廓
 minRect = [None]*len(contours)
 for i,c in enumerate(contours):
-
     minRect[i] = cv.minAreaRect(c)
-print("minrect",minRect)
+print("minimum rectangle area",minRect)
+
 for i,c in enumerate(contours):
     box = cv.boxPoints(minRect[i])
     box = np.intp(box)
+
     print('the box point lists',box)
     if i==0:
         print('box[i, 0]',box[0])
-    box_w = box[0] - box[1]
-    box_h = box[1] - box[2]
-    w = np.sqrt(np.sum(box_w ** 2))
-    print('w=', w)
-    h = np.sqrt(np.sum(box_h ** 2))
-    print('h=', h)
-    if w*h>10000:
-        if w<h+0.1 and w>h-0.1:
+    box_w = minRect[i][1][0] #get box2D structure,(x,y) and (w,h)
+    box_h = minRect[i][1][1]
+    #w = np.sqrt(np.sum(box_w ** 2))
+    print('w=', box_w)
+    #h = np.sqrt(np.sum(box_h ** 2))
+    print('h=', box_h)
+    if box_w*box_h>10000:
+        if box_w<box_h+0.1 and box_w>box_h-0.1:
+
             cv.drawContours(Ileather, contours, i , (0, 0, 255), 3)
+            M = cv.moments(c)
+            print(M)
+            centre_x, centre_y = int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])
+            print('circle centre x is :', centre_x, 'circle centre y is :', centre_y)
+
 
 
 cv.imshow("LeatherMultiplyCircles3",Ileather)
@@ -202,3 +215,6 @@ cv.imshow("hough circle",Ileather)
 '''
 cv.waitKey(0)
 cv.destroyAllWindows()
+
+
+
