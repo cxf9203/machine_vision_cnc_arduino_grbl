@@ -2,10 +2,8 @@ import cv2 as cv
 import numpy as np
 import math
 
-def cncdrawcircle(cccircle):
-    circle_x = cccircle[0]
-    circle_y = cccircle[1]
-    gcodecmd = "G01 "+"X"+str(circle_x) +" Y"+str(circle_y)
+def cncdrawcircle(x,y):
+    gcodecmd = "G01 "+"X"+str(x) +" Y"+str(y)
     print("gcode cmd is :",gcodecmd)
 
 ###settings###
@@ -158,31 +156,33 @@ contours,hierarchy = cv.findContours(LeatherMultiplyCircles,cv.RETR_EXTERNAL,cv.
 minRect = [None]*len(contours)
 for i,c in enumerate(contours):
     minRect[i] = cv.minAreaRect(c)
-print("minimum rectangle area",minRect)
+#print("minimum rectangle area",minRect)
 
 for i,c in enumerate(contours):
     box = cv.boxPoints(minRect[i])
     box = np.intp(box)
 
-    print('the box point lists',box)
-    if i==0:
-        print('box[i, 0]',box[0])
+    #print('the box point lists',box)
+    #if i==0:
+     #   print('box[i, 0]',box[0])
     box_w = minRect[i][1][0] #get box2D structure,(x,y) and (w,h)
     box_h = minRect[i][1][1]
     #w = np.sqrt(np.sum(box_w ** 2))
-    print('w=', box_w)
+    #print('w=', box_w)
     #h = np.sqrt(np.sum(box_h ** 2))
-    print('h=', box_h)
-    if box_w*box_h>10000:
+    #print('h=', box_h)
+    if box_w*box_h>30000:
         if box_w<box_h+0.1 and box_w>box_h-0.1:
-
             cv.drawContours(Ileather, contours, i , (0, 0, 255), 3)
             M = cv.moments(c)
-            print(M)
+            #print(M)
             centre_x, centre_y = int(M['m10'] / M['m00']), int(M['m01'] / M['m00'])
-            print('circle centre x is :', centre_x, 'circle centre y is :', centre_y)
-
-
+            #print('circle centre x is :', centre_x, 'circle centre y is :', centre_y)
+            cv.circle(Ileather,(centre_x,centre_y),7, (0,255,0), -1)
+            cv.line(Ileather,(centre_x,centre_y),(centre_x+CircleRadius,centre_y),(0,255,0),2)
+            cncdrawcircle(centre_x,centre_y)
+    else:
+        pass
 
 cv.imshow("LeatherMultiplyCircles3",Ileather)
 '''
@@ -194,12 +194,7 @@ circles = cv.HoughCircles(img_black, cv.HOUGH_GRADIENT, 1, CircleRadius,
 #print(circles)
 circles_count =circles.shape[1]
 print(circles)
-
-
-
 ###寻找最多圆的方案###
-
-
 #draw circle
 #print("circle count",circles_count)
 if circles is not None:
@@ -215,6 +210,9 @@ cv.imshow("hough circle",Ileather)
 '''
 cv.waitKey(0)
 cv.destroyAllWindows()
+
+
+
 
 
 
