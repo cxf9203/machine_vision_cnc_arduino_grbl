@@ -13,21 +13,27 @@ import cv2 as cv
 import numpy as np
 import math
 import threading
-#import serial
+import serial
 
 #serial setting
-#serialPort="com4"
-#baudRate = 115200
-#ser = serial.Serial(serialPort,baudRate,timeout=0.5)
+serialPort="com4"
+baudRate = 115200
+ser = serial.Serial(serialPort,baudRate,timeout=0.5)
 
 #CNC G code programming
 #cartissian space coordinate translation
 def cncdrawcircle(x,y):
-    gcodecmd = "G01 "+"X"+str(x) +" Y"+str(y)
+    gcodecmd = "G01 "+"X"+str(x) +" Y"+str(y)+ '\r\n'
+    gcodecmd+= "G01 " +" Y"+str(100)+ '\r\n'
+    gcodecmd+= "G02 "+ "X"+str(100) +"R"+str(100)+ '\r\n'
+    gcodecmd+= "G02 "+ " Y"+str(-100) +"R"+str(100)+ '\r\n'
+    gcodecmd += "G02 " + " X" + str(-100) + "R" + str(100)+ '\r\n'
+    gcodecmd += "G02 " + " Y" + str(100) + "R" + str(100)+ '\r\n'
     print("gcode cmd is :",gcodecmd)
+    print("finish cnc drawing")
     #todo:
     #need a patten to milling
-   # ser.write((gcodecmd + '\r\n').encode())
+    #ser.write((gcodecmd + '\r\n').encode())
 
 #initialization
 ###computer vision settings###
@@ -148,7 +154,7 @@ def on_message(client, userdata, msg):
         print("G_code_send received")
         Gcodetext = Msg['params']['G_code_send']
         print(Gcodetext)
-        # ser.write((Gcodetext + '\r\n').encode())
+        ser.write((Gcodetext + '\r\n').encode())
     else:
         print("G_code not received")
 
@@ -206,20 +212,21 @@ def machinevisionprocess():
             else:
                 pass
         ##translate circle for next loop
-        img_black_binary = cv.warpAffine(img_black_binary, mat, (img_black_binary.shape[1], img_black_binary.shape[0]))
+        img_black_binary = cv.warpAffine(img_black_binary, mat,
+                                         (img_black_binary.shape[1], img_black_binary.shape[0]))
     # print('circle centre x is :', centre_x, 'circle centre y is :', centre_y)
-    # print(centre)
+    print(centre)
     for i in range(len(centre)):
         centre_x = centre[i][0]
         centre_y = centre[i][1]
+        cncdrawcircle(centre_x,centre_y)
         cv.circle(Ileather, (centre_x, centre_y), 7, (0, 255, 0), -1)  # 画出圆心
         cv.circle(Ileather, (centre_x, centre_y), CircleRadius, (0, 255, 0), 4)  # 画出半径轮廓
         cv.line(Ileather, (centre_x, centre_y), (centre_x + CircleRadius, centre_y), (0, 255, 0), 2)  # 画出半径
         cv.putText(Ileather, (str(centre_x) + "," + str(centre_y)), (centre_x - 50, centre_y + 30), font, 1,
                    (0, 255, 0), 2)
-        # cncdrawcircle(centre_x, centre_y)
-    # cv.imshow("output",Ileather)
 
+    # cv.imshow("output",Ileather)
     ###create coordination###
     cv.line(Ileather, (0, 0), (0 + 100, 0), (0, 255, 0), 2)
     cv.line(Ileather, (0, 0), (0, 0 + 100), (0, 255, 0), 2)
@@ -228,6 +235,10 @@ def machinevisionprocess():
     print('run here')
     cv.namedWindow("processed", cv.WINDOW_AUTOSIZE)
     cv.imshow("processed", Ileather)
+    #cncdrawcircle(centre_x, centre_y)
+    cv.waitKey(5000)
+    cv.destroyWindow("processed")
+
 
 
 
@@ -272,7 +283,8 @@ class myThread (threading.Thread):
                 break
     def get_result(self):
         return self.frame
-thread_vision = myThread(1,"machinevision")
+
+thread_vision = myThread(threadID=1,name="machinevision")
 thread_vision.start()
 while True:
     #todo:banzidong quanzidongqiehuan
